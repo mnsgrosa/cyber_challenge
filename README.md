@@ -11,4 +11,4 @@ supervisor agent: Agent responsible to rewrite the prompt for tool calling the o
 summarizer agent: Agent with access based on user access in QA-dashboard
 graph agent: Agent responsible for retrieving data points to generate the graph
 
-![architecture](./Base_architecture.png)
+![architecture](./Base_architetcture.png)
