@@ -2,9 +2,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, HTTPException, status
-
-from api_utils.api_schema import Governance, GovernanceResponse, Permissions
+import uvicorn
+from api_utils.api_schema import Governance, GovernanceResponse
 from api_utils.constants import (
     TOKEN_EXPIRATION_HOURS,
     email_to_user,
@@ -12,6 +11,7 @@ from api_utils.constants import (
     users,
     users_passwords,
 )
+from fastapi import Depends, FastAPI, Header, HTTPException, status
 
 # from agent import supervisor_agent
 
@@ -41,7 +41,6 @@ async def generate_token(user: Governance):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Wrong password"
         )
 
-    permissions = Permissions(**user_permission[username])
     token = str(uuid4())
 
     active_tokens[token] = {
@@ -76,3 +75,7 @@ def validate_token(auth: Optional[str] = Header(None)):
         )
 
     return token_data["username"]
+
+
+if __name__ == "__main__":
+    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)
