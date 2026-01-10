@@ -8,6 +8,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 from schema.retrieval_schema import (
+    ListerToolResponse,
     NvdToolResponse,
     VulnerabilityToolResponse,
 )
@@ -22,7 +23,7 @@ retrieval_model = GoogleModel("gemini-2.5-flash-lite", provider=retrieval_provid
 retrieval_agent = Agent(
     retrieval_model,
     system_prompt=RETRIEVAL_SYSTEM_PROMPT,
-    output_type=VulnerabilityToolResponse,
+    output_type=[ListerToolResponse, VulnerabilityToolResponse, NvdToolResponse],
 )
 
 
@@ -77,7 +78,7 @@ def device_vulnerability_tool(
 
 
 @retrieval_agent.tool
-def cve_searcher(ctx: RunContext[None], cves: List[str]) -> NvdToolResponse:
+def cve_search_tool(ctx: RunContext[None], cve_list: List[str]) -> NvdToolResponse:
     """
     Tool specialized in searching the nvd database api based at the cve code if only one cve is provided
     pass a list with only one cve, lesser than one shouldn't use this tool
@@ -90,13 +91,13 @@ def cve_searcher(ctx: RunContext[None], cves: List[str]) -> NvdToolResponse:
         cve follows an anatomy that must be obeyed:
             CVE-YYYY-NNNNN: Always start with CVE followed by '-' year '-' and number
     """
-    broken_cve = [True if cve_issue(cve) else False for cve in cves]
+    broken_cve = [True if cve_issue(cve) else False for cve in cve_list]
     if True in broken_cve:
         raise ValueError("Invalid CVE format found")
 
     descriptions = []
 
-    for cve in cves:
+    for cve in cve_list:
         with httpx.Client() as client:
             response = client.get(
                 "https://services.nvd.nist.gov/rest/json/cves/2.0",
@@ -110,3 +111,19 @@ def cve_searcher(ctx: RunContext[None], cves: List[str]) -> NvdToolResponse:
             )
 
     return NvdToolResponse(descriptions=descriptions)
+
+
+@retrieval_agent.tool
+def cve_list_tool(ctx: RunContext[None]) -> ListerToolResponse:
+    """
+    Tool specialized in getting all device_names from postgres db
+
+    ARGS:
+        ctx[RunContext]: Context of the agent run
+
+    RETURNS:
+        List[str]: List with the name of each device at the company database
+    """
+    handler = PsqlHandler()
+    device_names = handler.list_devices()
+    return ListerToolResponse(list=device_names)

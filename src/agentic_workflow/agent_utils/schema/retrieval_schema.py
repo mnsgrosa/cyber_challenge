@@ -15,3 +15,10 @@ class NvdToolResponse(BaseModel):
         ...,
         description="List of CVEs description",
     )
+
+
+class ListerToolResponse(BaseModel):
+    list: List[str] = Field(
+        ...,
+        description="List of items",
+    )

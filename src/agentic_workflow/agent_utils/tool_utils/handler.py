@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from typing import Dict, List, Optional
 
-import pandas as pd
 import psycopg2
 from psycopg2.extras import RealDictCursor, RealDictRow
 
@@ -64,45 +63,14 @@ class PsqlHandler:
             return True
         return False
 
-    def generic_get(
-        self, table_name: Optional[str], columns_and_values: Optional[Dict[str, str]]
-    ):
-        if table_name is None:
-            raise ValueError("Table name cannot be empty")
-
-        if table_name not in self.tables:
-            raise ValueError("Table not found")
-
-        if columns_and_values and columns_and_values.keys() in self.columns[table_name]:
-            raise ValueError("Column not found at selected table")
-
-        values = []
-
-        if columns_and_values is None:
-            selection = "*"
-        else:
-            selection = ", ".join(columns_and_values.keys())
-            values = [
-                value if value is not None else None
-                for value in columns_and_values.values()
-            ]
-            for value in values:
-                if value in self.guard_list:
-                    raise ValueError("SQL injection detected")
-
-        query = f"SELECT {selection} FROM {table_name}"
-
-        if values and columns_and_values:
-            query += " WHERE "
-            query += " AND ".join([f"{key} = %s" for key in columns_and_values.keys()])
-
+    def list_devices(self):
+        query = """
+            SELECT DISTINC(name) FROM devices
+        """
         with self.get_cursor() as cursor:
-            if values:
-                cursor.execute(query, values)
-            else:
-                cursor.execute(query)
-            raw_data = cursor.fetchall()
-        data = [data for data in raw_data]
+            cursor.execute(query)
+            data = cursor.fetchall()
+        data = [row["name"] for row in data]
         return data
 
     def get_devices_vulnerabilities(self, device_name: List[str]) -> List[RealDictRow]:
