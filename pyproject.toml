@@ -10,6 +10,8 @@ dependencies = [
     "logfire>=4.17.0",
     "pandas>=2.3.3",
     "plotly>=6.5.1",
+    "psycopg-binary>=3.3.2",
+    "psycopg2>=2.9.11",
     "pydantic-ai>=1.40.0",
     "streamlit>=1.52.2",
 ]

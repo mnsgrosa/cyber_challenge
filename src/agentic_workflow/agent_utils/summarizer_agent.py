@@ -1,42 +1,45 @@
 import os
+from typing import Dict, List, Optional
 
+import httpx
 from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
-from schema.agent_schema import (
-    NvdSearchResponse,
+from schema.summarizer_schema import (
+    Vulnerability,
+    VulnerabilityToolResponse,
 )
+from tool_utils.handler import PsqlHandler
 
 load_dotenv()
 
 
 summarizer_provider = GoogleProvider(api_key=os.getenv("SUMMARIZER_KEY"))
 summarizer_model = GoogleModel("gemini-2.5-flash-lite", provider=summarizer_provider)
-summarizer_agent = Agent(summarizer_model)
+summarizer_agent = Agent(summarizer_model, output_type=VulnerabilityToolResponse)
 
 
 @summarizer_agent.tool
-def cve_tool(ctx: RunContext[None], product_name: str) -> NvdSearchResponse:
+def device_vulnerability_tool(
+    ctx: RunContext[None],
+    device_list: List[str],
+) -> VulnerabilityToolResponse:
     """
-    Based on which vulnerability name was given pass the name as query for this tool,
-    it will query the National Vulnerability Database api with a keywordSearch parameter
+    This tool allows you to query the vulnerabitlities table that holds informations about the National Vulnerabilities Database(NVD)
+    here you will provide the CVE code from desired vulnerability
+
+    NOTE:
+        If user didn't pass at least on item dont run this tool
 
     ARGS:
         ctx[RunContext]: Context of the agent run
-        product_name[str]: name of the product to get vulnerabilities
+        device_list[List[str]]: A list that contains the name of the desired devices
     """
+    handler = PsqlHandler()
     try:
-        params = {"keywordSearch": product_name, "resultsPerPage": 1}
-        with httpx.Client() as client:
-            response = client.get(
-                "https://services.nvd.nist.gov/rest/json/cves/2.0", params=params
-            )
-        data = response.json()
-        items = data.get("vulnerabilities", [])
+        ans = handler.get_devices_vulnerabilities(device_list)
+        ans = [Vulnerability(**row) for row in ans]
+        return VulnerabilityToolResponse(vulnerabilities=ans)
     except Exception as e:
-        raise e
-
-    return NvdSearchResponse(
-        id=items["id"], description=items["descriptions"][0]["value"]
-    )
+        raise ValueError("Wasnt able to retrieve data")
