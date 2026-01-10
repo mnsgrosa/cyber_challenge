@@ -4,7 +4,7 @@ import httpx
 import logfire
 from agent_utils.agent_prompts import (
     CHART_SYSTEM_PROMPT,
-    SUMMARIZER_SYSTEM_PROMPT,
+    RETRIEVAL_SYSTEM_PROMPT,
     SUPERVISOR_SYSTEM_PROMPT,
 )
 from agent_utils
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent, RunContext, ToolReturn
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
-from agent_utils.summarizer_agent import summarizer_agent
+from agent_utils.retrieval_agent import retrieval_agent
 load_dotenv()
 
 ###
@@ -24,9 +24,9 @@ supervisor_model = GoogleModel("gemini-2.5-pro", provider=supervisor_provider)
 supervisor_agent = Agent(supervisor_model)
 
 @supervisor_agent.tool
-def run_summarizer(ctx: RunContext[None], prompt:str):
+def run_retrieval(ctx: RunContext[None], prompt:str):
     """
-    Rewrite the prompt so the summarizer agent performs better
+    Rewrite the prompt so the retrieval agent performs better
 
     ARGS:
         ctx[RunContext]: Agent context

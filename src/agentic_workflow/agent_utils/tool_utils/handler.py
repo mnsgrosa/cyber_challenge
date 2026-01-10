@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 from typing import Dict, List, Optional
 
+import pandas as pd
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, RealDictRow
 
 
 class PsqlHandler:
@@ -58,6 +59,11 @@ class PsqlHandler:
             self.connection.close()
             self.connection = None
 
+    def is_injection(self, items):
+        if all(guard in items for guard in self.guard_list):
+            return True
+        return False
+
     def generic_get(
         self, table_name: Optional[str], columns_and_values: Optional[Dict[str, str]]
     ):
@@ -99,12 +105,12 @@ class PsqlHandler:
         data = [data for data in raw_data]
         return data
 
-    def get_devices_vulnerabilities(self, device_name: Optional[List[str]] = None):
+    def get_devices_vulnerabilities(self, device_name: List[str]) -> List[RealDictRow]:
         """
         Method that outputs all devices and vulnerabilities or from specific devices
         returns a dicitionary with columns id, name, description, cve and discovery_date
         """
-        if device_name and all(guard in device_name for guard in self.guard_list):
+        if self.is_injection(device_name):
             raise ValueError("SQL injection detected")
 
         if device_name:
@@ -112,15 +118,15 @@ class PsqlHandler:
 
         query = """
         SELECT
-            d.id,
-            d.name,
-            v.id as detail_id,
+            d.name as device_name,
+            dc.name as category_name,
             v.description,
             v.cve,
             v.discovery_date
-            FROM devices as d
-            INNER JOIN device_vulnerabilities i ON d.id = i.device_id
-            INNER JOIN vulnerabilities v ON i.vulnerability_id = v.id
+        FROM devices as d
+        INNER JOIN device_vulnerabilities i ON d.id = i.device_id
+        INNER JOIN vulnerabilities v ON i.vulnerability_id = v.id
+        INNER JOIN device_categories dc ON d.category_id = dc.id
         """
 
         if device_name:
