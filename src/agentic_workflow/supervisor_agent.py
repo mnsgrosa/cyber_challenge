@@ -1,6 +1,6 @@
-import asyncio
 import json
 
+import logfire
 from pydantic import TypeAdapter
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.google import GoogleModel
@@ -8,7 +8,10 @@ from pydantic_ai.models.google import GoogleModel
 from .agent_utils.retrieval_agent import retrieval_agent
 from .agent_utils.schema.retrieval_schema import RetrievalResponse
 
-supervisor_model = GoogleModel("gemini-2.5-pro")
+logfire.configure()
+logfire.instrument_pydantic_ai()
+
+supervisor_model = GoogleModel("gemini-2.5-flash")
 supervisor_agent = Agent(
     supervisor_model,
     system_prompt=(
@@ -64,7 +67,10 @@ def validate_input(prompt: str) -> str:
     return defense_prompt
 
 
-def run_agent(prompt: str):
+async def run_agent(prompt: str):
     defense_prompt = validate_input(prompt)
-    result = asyncio.run(supervisor_agent.run(defense_prompt))
+
+    with logfire.span("Supervisor Run"):
+        result = await supervisor_agent.run(defense_prompt)
+
     return result.output

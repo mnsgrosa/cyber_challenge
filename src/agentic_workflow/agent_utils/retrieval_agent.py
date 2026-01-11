@@ -1,4 +1,3 @@
-import os
 from typing import List
 
 import httpx
@@ -27,8 +26,6 @@ def cve_issue(cve: str) -> bool:
     if "CVE" not in prefix:
         return True
     if len(year) < 4 or not year.isdigit():
-        return True
-    if len(sequence_id) < 5 or not sequence_id.isdigit():
         return True
 
     return False

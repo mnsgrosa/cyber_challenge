@@ -80,9 +80,9 @@ def validate_token(auth: Optional[str] = Header(None)):
 
 
 @app.post("/prompt", response_model=AgentResponse)
-def get_answer(request: AgentRequest, user: str = Depends(validate_token)):
+async def get_answer(request: AgentRequest, user: str = Depends(validate_token)):
     prompt = request.prompt
-    answer = run_agent(prompt)
+    answer = await run_agent(prompt)
     return AgentResponse(content=answer, data=None)
 
 
