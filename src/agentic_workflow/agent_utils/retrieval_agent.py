@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 import httpx
@@ -14,6 +15,10 @@ retrieval_agent = Agent(
     retrieval_model,
     system_prompt=RETRIEVAL_SYSTEM_PROMPT,
     output_type=RetrievalResponse,
+)
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 
@@ -58,6 +63,7 @@ def device_vulnerability_tool(
         summary = extract_data(data)
         return RetrievalResponse(list=summary)
     except Exception as e:
+        logging.error(f"Error: {e}")
         raise ValueError("Wasn't able to retrieve data")
 
 

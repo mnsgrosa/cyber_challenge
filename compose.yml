@@ -1,0 +1,43 @@
+services:
+  streamlit:
+    image: my-own-custom-qa-agent:latest
+    build: .
+    ports:
+      - 8501:8501
+    environment:
+      - UV_NO_DEV=0
+    networks:
+      - qa-dashboard-network
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .venv/
+        - action: rebuild
+          path: ./uv.lock
+    depends_on:
+      backend:
+        condition: service_started
+    command: uv run python -m streamlit run src/agentic_workflow/chat.py
+
+  backend:
+    image: my-own-custom-qa-agent:latest
+    networks:
+      - qa-dashboard-network
+    ports:
+      - 8000:8000
+    environment:
+      - UV_NO_DEV=0
+      - DB_HOST=host.docker.internal
+      - DB_USER=postgres
+      - DB_PASS=postgres
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: uv run uvicorn agentic_workflow.api:app --reload --host 0.0.0.0 --port 8000
+
+networks:
+  qa-dashboard-network:
+    external: true
+    driver: bridge

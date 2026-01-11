@@ -1,5 +1,6 @@
+import os
 from contextlib import contextmanager
-from typing import Dict, List, Optional
+from typing import List
 
 import psycopg2
 from psycopg2.extras import RealDictCursor, RealDictRow
@@ -7,11 +8,11 @@ from psycopg2.extras import RealDictCursor, RealDictRow
 
 class PsqlHandler:
     def __init__(self):
-        self.host = "localhost"
-        self.port = "5432"
-        self.database = "postgres"
-        self.user = "postgres"
-        self.password = "postgres"
+        self.host = os.getenv("DB_HOST", "localhost")
+        self.port = os.getenv("DB_PORT", "5432")
+        self.database = os.getenv("DB_NAME", "postgres")
+        self.user = os.getenv("DB_USER", "postgres")
+        self.password = os.getenv("DB_PASS", "postgres")
         self.tables = [
             "asset_types",
             "device_categories",

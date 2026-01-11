@@ -16,7 +16,7 @@ def validate_credentials(username, password):
 
     try:
         with httpx.Client() as client:
-            response = client.post("http://localhost:8000/auth", json=credentials)
+            response = client.post("http://backend:8000/auth", json=credentials)
         if response.status_code == 401:
             st.error("Unauthorized user")
             return None
@@ -75,7 +75,7 @@ def chat_page():
 
         with httpx.Client(timeout=30.0) as client:
             response = client.post(
-                "http://localhost:8000/prompt",
+                "http://backend:8000/prompt",
                 json={"prompt": prompt},
                 headers={"Auth": f"Bearer {st.session_state.credentials['token']}"},
             )
