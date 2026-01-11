@@ -3,28 +3,30 @@ from typing import Optional
 from uuid import uuid4
 
 import uvicorn
-from api_utils.api_schema import Governance, GovernanceResponse
-from api_utils.constants import (
+from fastapi import Depends, FastAPI, Header, HTTPException, status
+
+from . import config
+from .api_utils.api_schema import (
+    AgentRequest,
+    AgentResponse,
+    Governance,
+    GovernanceResponse,
+)
+from .api_utils.constants import (
     TOKEN_EXPIRATION_HOURS,
     email_to_user,
     user_permission,
     users,
     users_passwords,
 )
-from fastapi import Depends, FastAPI, Header, HTTPException, status
-
-# from agent import supervisor_agent
+from .supervisor_agent import run_agent
 
 app = FastAPI()
 active_tokens = {}
 
-###
-# TODO: Create an agent prompt return with a defined return
-###
-
 
 @app.post("/auth", response_model=GovernanceResponse)
-async def generate_token(user: Governance):
+def generate_token(user: Governance):
     if user.username not in users:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="User doest not exist"
@@ -75,6 +77,13 @@ def validate_token(auth: Optional[str] = Header(None)):
         )
 
     return token_data["username"]
+
+
+@app.post("/prompt", response_model=AgentResponse)
+def get_answer(request: AgentRequest, user: str = Depends(validate_token)):
+    prompt = request.prompt
+    answer = run_agent(prompt)
+    return AgentResponse(content=answer, data=None)
 
 
 if __name__ == "__main__":

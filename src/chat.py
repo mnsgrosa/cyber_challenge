@@ -1,6 +1,4 @@
 import httpx
-import pandas as pd
-import plotly.express as px
 import streamlit as st
 
 if "authenticated" not in st.session_state:
@@ -68,18 +66,31 @@ def chat_page():
                 st.markdown(message["content"])
 
     if prompt := st.chat_input("Vulnerabilities chat"):
+        answer = None
         st.session_state.chat_history.append(
-            {"role": "user", "content": "prompt", "data": None}
+            {"role": "user", "content": prompt, "data": None}
         )
         with st.chat_message("user"):
-            st.markdown("prompt")
+            st.markdown(prompt)
 
-        pass
-        # with st.chat_message("assistant"):
-        #     with st.spinner("Thinking...", show_time = True):
-        #         try:
-        #             with httpx.Client() as client:
-        #                 client.get("localhost:8080/")
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                "http://localhost:8000/prompt",
+                json={"prompt": prompt},
+                headers={"Auth": f"Bearer {st.session_state.credentials['token']}"},
+            )
+
+        if response.status_code != 200:
+            st.error(f"Error: {response.status_code}")
+        else:
+            answer = response.json().get("content", "")
+
+        if answer:
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": answer, "data": None}
+            )
+            with st.chat_message("assistant"):
+                st.markdown(answer)
 
 
 def main():

@@ -63,14 +63,25 @@ class PsqlHandler:
             return True
         return False
 
-    def list_devices(self):
+    def list_devices_e_cves(self, limit: int):
         query = """
-            SELECT DISTINC(name) FROM devices
-        """
+            SELECT
+                d.name AS device_name,
+                string_agg(v.title, ';') AS vulnerabilities,
+                string_agg(v.cve, ';') AS cves
+            FROM (
+                SELECT id, name
+                FROM devices
+                ORDER BY id
+                LIMIT 100
+            ) AS d
+            INNER JOIN device_vulnerabilities i ON d.id = i.device_id
+            INNER JOIN vulnerabilities v ON i.vulnerability_id = v.id
+            GROUP BY d.id, d.name;
+            """
         with self.get_cursor() as cursor:
             cursor.execute(query)
             data = cursor.fetchall()
-        data = [row["name"] for row in data]
         return data
 
     def get_devices_vulnerabilities(self, device_name: List[str]) -> List[RealDictRow]:
