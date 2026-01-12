@@ -8,7 +8,7 @@ from .agent_utils.retrieval_agent import retrieval_agent
 from .agent_utils.schema.basic_schema import RetrievalResponse
 from .agent_utils.schema.context_schema import ToolResponse
 
-operator_supervisor_model = GoogleModel("gemini-2.5-flash-preview-09-2025")
+operator_supervisor_model = GoogleModel("gemini-3-flash-preview")
 operator_supervisor_agent = Agent(
     operator_supervisor_model,
     deps_type=ToolResponse | None,

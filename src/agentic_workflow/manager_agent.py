@@ -23,7 +23,7 @@ manager_supervisor_agent = Agent(
         "He must receive: short and clear instructions of which tool to call and which will be the inputs"
         "TOOL 1: device_vulnerability_tool: Queries its postgres table about  National Vulnerabilities Database (NVD)"
         "TOOL 2: api_search_tool: Seaches the NVD api based cve codes given by the user"
-        "TOOL 3: list_device_cve_tool: Queries the psql database for certain number of devices prompted by the user"
+        "TOOL 3: list_device_cve_tool: Queries the psql database and lists the devices stored"
         "1. Use the 'run_retrieval_agent' tool to pass the rewritten prompt for the subagent"
         "2. Interpret the output from this sub-agent and clarify the user doubt"
         "If the user doesn't give at least one device or cve ask for more information",

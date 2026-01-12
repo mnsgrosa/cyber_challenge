@@ -64,7 +64,10 @@ def login_page():
 def chat_page():
     with st.sidebar:
         st.markdown(f"Logged as {st.session_state.credentials['username']}")
-        st.button("Logout", on_click=logout())
+        logout_button = st.button("Logout", type="primary")
+
+        if logout_button:
+            logout()
 
     for message in st.session_state.chat_history[-5:]:
         with st.chat_message(message["role"]):

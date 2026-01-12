@@ -11,7 +11,7 @@ network:
 
 build:
 	@echo "Building docker compose services..."
-	docker compose build
+	docker compose build --no-cache
 
 run:
 	@echo "Starting services..."
