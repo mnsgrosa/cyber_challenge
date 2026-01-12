@@ -39,7 +39,7 @@ def login_page():
 
     with st.form("login_form"):
         username = st.text_input("Username/email")
-        password = st.text_input("Password")
+        password = st.text_input("Password", type="password")
         submit = st.form_submit_button("Login")
 
         if submit:

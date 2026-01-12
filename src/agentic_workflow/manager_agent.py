@@ -37,7 +37,7 @@ manager_supervisor_agent = Agent(
         "TOOL 6: update_asset_tool: updates an asset locat at assets table the first position being the old_asset_name and the second the new_asset_name",
         "TOOL 7: update_devices_info_tool: update the devices table but it can update 3 of the available columns it will receive the parameter 'column' as a string and 'new_devices_info' a list of tuples with (outdated_item, updated_item)"
         "TOOL 8: update_device_category_name_tool: this tool updates the device_categories table based at the same logic of list of tuples that receive (outdate_name, updated_name)]",
-        "Your task is inform the user about what your tools has done and tell the user your interpretation of the outpus",
+        "Your task is inform the user about what your tools has done and tell the user your interpretation of the outputs",
     ),
 )
 
