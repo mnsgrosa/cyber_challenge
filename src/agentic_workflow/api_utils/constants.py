@@ -7,22 +7,12 @@
 
 TOKEN_EXPIRATION_HOURS = 24
 
-users = ["operator-user", "manager=user", "admin-user"]
+users = ["operator-user", "manager-user", "admin-user"]
 
 permissions = {
-    "operator": {
-        "dashboard": True,
-        "management_page": False,
-        "crud": False,
-        "delete": False,
-    },
-    "manager": {
-        "dashboard": True,
-        "management_page": False,
-        "crud": True,
-        "delete": False,
-    },
-    "admin": {"dashboard": True, "management_page": True, "crud": True, "delete": True},
+    "operator-user": "operator",
+    "manager-user": "manager",
+    "admin-user": "admin",
 }
 
 users_passwords = {
@@ -32,9 +22,9 @@ users_passwords = {
 }
 
 user_permission = {
-    "operator-user": permissions["operator"],
-    "manager-user": permissions["manager"],
-    "admin-user": permissions["admin"],
+    "operator-user": permissions["operator-user"],
+    "manager-user": permissions["manager-user"],
+    "admin-user": permissions["admin-user"],
 }
 
 email_to_user = {

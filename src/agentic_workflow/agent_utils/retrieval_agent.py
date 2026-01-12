@@ -6,13 +6,15 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.google import GoogleModel
 
 from .agent_prompts import RETRIEVAL_SYSTEM_PROMPT
-from .schema.retrieval_schema import RetrievalResponse
+from .schema.basic_schema import RetrievalResponse
+from .schema.context_schema import ToolResponse
 from .tool_utils.handler import PsqlHandler
 from .tool_utils.statistics import extract_data
 
 retrieval_model = GoogleModel("gemini-2.5-flash-lite")
 retrieval_agent = Agent(
     retrieval_model,
+    deps_type=ToolResponse | None,
     system_prompt=RETRIEVAL_SYSTEM_PROMPT,
     output_type=RetrievalResponse,
 )
@@ -38,7 +40,7 @@ def cve_issue(cve: str) -> bool:
 
 @retrieval_agent.tool
 def device_vulnerability_tool(
-    ctx: RunContext[None],
+    ctx: RunContext[ToolResponse | None],
     device_list: List[str],
 ) -> RetrievalResponse:
     """
@@ -46,7 +48,7 @@ def device_vulnerability_tool(
     from a specific list with the name from devices, the list may contain 1 or more items but never 0.
 
     NOTE:
-        If user didn't pass at least one item, don't run this tool
+        If the user didn't pass at least one item, don't run this tool
 
     ARGS:
         ctx[RunContext]: Context of the agent run
@@ -55,7 +57,7 @@ def device_vulnerability_tool(
     RETURNS:
         RetrievalResponse: A response containing the vulnerabilities of the devices
         the schema follows the following schema: List[str] = list of strings condensing the informations
-        from devices
+        from each device
     """
     handler = PsqlHandler()
     try:
@@ -64,11 +66,13 @@ def device_vulnerability_tool(
         return RetrievalResponse(list=summary)
     except Exception as e:
         logging.error(f"Error: {e}")
-        raise ValueError("Wasn't able to retrieve data")
+        raise ValueError("Couldn't retrieve data")
 
 
 @retrieval_agent.tool
-def api_search_tool(ctx: RunContext[None], cve_list: List[str]) -> RetrievalResponse:
+def api_search_tool(
+    ctx: RunContext[ToolResponse | None], cve_list: List[str]
+) -> RetrievalResponse:
     """
     Tool specialized in searching the nvd database api based at the cve code if only one cve is provided
     pass a list with only one cve, lesser than one shouldn't use this tool
@@ -104,7 +108,9 @@ def api_search_tool(ctx: RunContext[None], cve_list: List[str]) -> RetrievalResp
 
 
 @retrieval_agent.tool
-def list_devices_cve_tool(ctx: RunContext[None], row_limit: int) -> RetrievalResponse:
+def list_devices_cve_tool(
+    ctx: RunContext[ToolResponse | None], row_limit: int
+) -> RetrievalResponse:
     """
     Tool specialized in getting all device_names from postgres db
 
@@ -117,9 +123,9 @@ def list_devices_cve_tool(ctx: RunContext[None], row_limit: int) -> RetrievalRes
     if row_limit == 0:
         raise ValueError("You must select the maximun of devices to be shown")
     handler = PsqlHandler()
-    devices_info = handler.list_devices_e_cves(row_limit)
+    devices_info = handler.get_devices()
     devices_info = [
-        f"Device_name:{row['device_name']} - CVEs:{row['cves']} - vulnerability_title:{row['vulnerabilities']}"
+        f"Device_name:{row['device_name']} - Asset_name:{row['asset_name']} - Category:{row['category']} - CVEs:{row['cves']} - vulnerability_title:{row['vulnerabilities']}"
         for row in devices_info
     ]
     return RetrievalResponse(list=devices_info)

@@ -2,10 +2,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 from uuid import uuid4
 
+import logfire
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException, status
 
 from . import config
+from .agent_utils.schema.context_schema import ToolResponse
 from .api_utils.api_schema import (
     AgentRequest,
     AgentResponse,
@@ -15,14 +17,18 @@ from .api_utils.api_schema import (
 from .api_utils.constants import (
     TOKEN_EXPIRATION_HOURS,
     email_to_user,
-    user_permission,
+    permissions,
     users,
     users_passwords,
 )
-from .supervisor_agent import run_agent
+from .manager_agent import run_manager_agent
+from .operator_agent import run_operator_agent
 
 app = FastAPI()
 active_tokens = {}
+
+logfire.configure()
+logfire.instrument_pydantic_ai()
 
 
 @app.post("/auth", response_model=GovernanceResponse)
@@ -48,7 +54,7 @@ def generate_token(user: Governance):
     active_tokens[token] = {
         "username": username,
         "expires_at": datetime.now() + timedelta(hours=TOKEN_EXPIRATION_HOURS),
-        "permissions": user_permission[username],
+        "permissions": permissions[username],
     }
 
     return GovernanceResponse(token=token)
@@ -82,8 +88,15 @@ def validate_token(auth: Optional[str] = Header(None)):
 @app.post("/prompt", response_model=AgentResponse)
 async def get_answer(request: AgentRequest, user: str = Depends(validate_token)):
     prompt = request.prompt
-    answer = await run_agent(prompt)
-    return AgentResponse(content=answer, data=None)
+    if user == "operator-user":
+        with logfire.span("Operator Run"):
+            answer = await run_operator_agent(prompt)
+        return AgentResponse(content=answer, data=None)
+    if user == "manager-user":
+        with logfire.span("Manager Run"):
+            answer = await run_manager_agent(prompt)
+        return AgentResponse(content=answer, data=None)
+    # TODO:implement admin role for deletions
 
 
 if __name__ == "__main__":

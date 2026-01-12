@@ -27,6 +27,13 @@ def validate_credentials(username, password):
         return None
 
 
+def logout():
+    st.session_state.authenticated = False
+    st.session_state.credentials = {}
+    st.session_state.chat_history = []
+    st.rerun()
+
+
 def login_page():
     st.title("Login page")
 
@@ -57,6 +64,7 @@ def login_page():
 def chat_page():
     with st.sidebar:
         st.markdown(f"Logged as {st.session_state.credentials['username']}")
+        st.button("Logout", on_click=logout())
 
     for message in st.session_state.chat_history[-5:]:
         with st.chat_message(message["role"]):
